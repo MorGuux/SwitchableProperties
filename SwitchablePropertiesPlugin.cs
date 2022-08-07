@@ -70,10 +70,10 @@ namespace SwitchableProperties
             foreach (SwitchablePropertyContainer property in _switchableProperties)
             {
                 // Declare a property available in the property list, this gets evaluated "on demand" (when shown or used in formulas)
-                this.AttachDelegate($"MultiPositionWidget_{property.Property.PropertyName}", () => property.PropertyValue);
+                this.AttachDelegate($"{property.Property.PropertyName}", () => property.PropertyValue);
 
                 // Declare an event
-                this.AddEvent($"MultiPositionWidget_{property.Property.PropertyName}Update");
+                this.AddEvent($"{property.Property.PropertyName}Update");
 
                 if (property.Property.Binds == null)
                     return;
@@ -83,7 +83,7 @@ namespace SwitchableProperties
                     this.AddAction($"{property.Property.PropertyName}_{bind.ActionName}", (a, b) =>
                     {
                         property.PropertyValue = bind.PropertyValue;
-                        this.TriggerEvent($"MultiPositionWidget_{property.Property.PropertyName}Update");
+                        this.TriggerEvent($"{property.Property.PropertyName}Update");
                     });
                 }
             }
