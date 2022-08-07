@@ -2,9 +2,13 @@
 
 ### Control multiple SimHub properties using multiple binds.
 
+
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=8D7W_UCHs4c" target="_blank">
  <img src="http://img.youtube.com/vi/8D7W_UCHs4c/mqdefault.jpg" alt="Watch the video" width="576" height="324" />
 </a>
+
+Video kindly created by LeecarL
+
 
 This is a small plugin that allows the user to create properties that can change values according to binds (keyboard, steering wheel button etc.)
 
