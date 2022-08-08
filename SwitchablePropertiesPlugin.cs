@@ -99,6 +99,7 @@ namespace SwitchableProperties
                         .OfType<SwitchableValueBind>()
                         .FirstOrDefault();
                     propertyContainer.PropertyValue = switchableValueBind?.PropertyValue;
+                    propertyContainer.BindName = switchableValueBind?.ActionName;
                     propertyContainer.Property = property;
                     _switchableProperties.Add(propertyContainer);
                 }
@@ -108,8 +109,10 @@ namespace SwitchableProperties
             {
                 // Declare a property available in the property list, this gets evaluated "on demand" (when shown or used in formulas)
                 this.AttachDelegate($"{property.Property.PropertyName}", () => property.PropertyValue);
+                this.AttachDelegate($"{property.Property.PropertyName}_ActiveBind", () => property.BindName);
 
-                // Declare an event
+
+                    // Declare an event
                 this.AddEvent($"{property.Property.PropertyName}Update");
 
                 if (property.Property.Binds == null)
@@ -122,6 +125,7 @@ namespace SwitchableProperties
                         this.AddAction($"{property.Property.PropertyName}_{bind.ActionName}", (a, b) =>
                         {
                             property.PropertyValue = ((SwitchableValueBind)bind).PropertyValue;
+                            property.BindName = ((SwitchableValueBind)bind).ActionName;
                             this.TriggerEvent($"{property.Property.PropertyName}Update");
                         });
                     }
@@ -130,10 +134,14 @@ namespace SwitchableProperties
                         this.AddAction($"{property.Property.PropertyName}_{bind.ActionName}", (a, b) =>
                         {
                             var direction = ((SwitchableCyclerBind)bind).Direction;
+                            SwitchableValueBind nextBind;
                             if(direction == "Forward")
-                                property.PropertyValue = property.GetNextBindValue();
+                                nextBind = property.GetNextBind();
                             else
-                                property.PropertyValue = property.GetPreviousBindValue();
+                                nextBind = property.GetPreviousBind();
+
+                            property.PropertyValue = nextBind.PropertyValue;
+                            property.BindName = nextBind.ActionName;
                             this.TriggerEvent($"{property.Property.PropertyName}Update");
                         });
                     }
@@ -141,7 +149,8 @@ namespace SwitchableProperties
                     {
                         this.AddAction($"{property.Property.PropertyName}_{bind.ActionName}", (a, b) =>
                         {
-                            property.PropertyValue = property.GetToggleValue(((SwitchableToggleBind)bind).PropertyValue);
+                            property.PropertyValue = ((SwitchableToggleBind)(bind)).GetToggleValue(property.PropertyValue);
+                            property.BindName = ((SwitchableToggleBind)bind).GetToggleName(property.BindName);
                             this.TriggerEvent($"{property.Property.PropertyName}Update");
                         });
                     }
@@ -153,11 +162,11 @@ namespace SwitchableProperties
     internal class SwitchablePropertyContainer
     {
         internal string PropertyValue;
-        private string _lastPropertyValue;
+        internal string BindName;
         private int _propertyIndex;
         internal SwitchableProperty Property;
 
-        internal string GetNextBindValue()
+        internal SwitchableValueBind GetNextBind()
         {
             _propertyIndex = GetIndexOfBind();
 
@@ -172,7 +181,7 @@ namespace SwitchableProperties
             return GetBindValueAt(_propertyIndex);
         }
 
-        internal string GetPreviousBindValue()
+        internal SwitchableValueBind GetPreviousBind()
         {
             _propertyIndex = GetIndexOfBind();
 
@@ -187,12 +196,11 @@ namespace SwitchableProperties
             return GetBindValueAt(_propertyIndex);
         }
 
-        private string GetBindValueAt(int index)
+        private SwitchableValueBind GetBindValueAt(int index)
         {
             return Property.Binds
                 .OfType<SwitchableValueBind>()
-                .ElementAt(index)
-                .PropertyValue;
+                .ElementAt(index);
         }
 
         private int GetIndexOfBind()
@@ -203,20 +211,6 @@ namespace SwitchableProperties
 
             return Property.Binds
                 .IndexOf(activeBind);
-        }
-
-        internal string GetToggleValue(string bindValue)
-        {
-            if (bindValue == PropertyValue)
-            {
-                PropertyValue = _lastPropertyValue;
-            }
-            else
-            {
-                _lastPropertyValue = PropertyValue;
-                PropertyValue = bindValue;
-            }
-            return PropertyValue;
         }
     }
 
@@ -247,6 +241,36 @@ namespace SwitchableProperties
     {
         public override string ActionName { get; set; }
         public string PropertyValue { get; set; }
+        private string _lastPropertyValue;
+        private string _lastBind;
+        public string GetToggleValue(string oldValue)
+        {
+            if (oldValue == PropertyValue)
+            {
+                string newValue = _lastPropertyValue;
+                _lastPropertyValue = PropertyValue;
+                return newValue;
+            }
+            else
+            {
+                _lastPropertyValue = oldValue;
+                return PropertyValue;
+            }
+        }
+        public string GetToggleName(string oldBind)
+        {
+            if (oldBind == ActionName)
+            {
+                string newValue = _lastBind;
+                _lastBind = ActionName;
+                return newValue;
+            }
+            else
+            {
+                _lastBind = oldBind;
+                return ActionName;
+            }
+        }
     }
 
     //USED FOR CONVERTING V1 SETTINGS into V1.1+
