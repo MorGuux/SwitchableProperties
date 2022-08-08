@@ -3,7 +3,10 @@ using SimHub.Plugins;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
 using System.Windows.Media;
+using Newtonsoft.Json;
 
 namespace SwitchableProperties
 {
@@ -30,7 +33,11 @@ namespace SwitchableProperties
         public void End(PluginManager pluginManager)
         {
             // Save settings
-            this.SaveCommonSettings("GeneralSettings", Settings);
+            File.WriteAllText(PluginManager.GetCommonStoragePath(this.GetType().Name + ".GeneralSettings.json"), 
+                JsonConvert.SerializeObject(Settings, new JsonSerializerSettings
+                {
+                    TypeNameHandling = TypeNameHandling.Auto
+                }));
         }
 
         public System.Windows.Controls.Control GetWPFSettingsControl(PluginManager pluginManager)
@@ -43,10 +50,39 @@ namespace SwitchableProperties
             SimHub.Logging.Current.Info("Starting plugin");
 
             // Load settings
-            Settings = this.ReadCommonSettings("GeneralSettings", () => new SwitchablePropertiesSettings
+            try
             {
-                Properties = new ObservableCollection<SwitchableProperty>()
-            });
+                Settings = JsonConvert.DeserializeObject<SwitchablePropertiesSettings>(
+                    File.ReadAllText(PluginManager.GetCommonStoragePath(this.GetType().Name + ".GeneralSettings.json")),
+                    new JsonSerializerSettings
+                    {
+                        TypeNameHandling = TypeNameHandling.Auto,
+                        Formatting = Formatting.Indented,
+                    });
+            }
+            catch (JsonSerializationException)
+            {
+                var oldSettings = JsonConvert.DeserializeObject<OldSwitchablePropertiesSettings>(
+                        File.ReadAllText(
+                            PluginManager.GetCommonStoragePath(this.GetType().Name + ".GeneralSettings.json")));
+                Settings = new SwitchablePropertiesSettings();
+                Settings.Properties = new ObservableCollection<SwitchableProperty>();
+                foreach (var setting in oldSettings.Properties)
+                {
+                    Settings.Properties.Add(new SwitchableProperty
+                    {
+                        PropertyName = setting.PropertyName,
+                        Binds = new ObservableCollection<SwitchableBind>(setting.Binds)
+                    });
+                }
+            }
+            catch (FileNotFoundException)
+            {
+                Settings = new SwitchablePropertiesSettings
+                {
+                    Properties = new ObservableCollection<SwitchableProperty>()
+                };
+            }
 
             if (Settings.Properties == null)
                 Settings.Properties = new ObservableCollection<SwitchableProperty>();
@@ -58,12 +94,13 @@ namespace SwitchableProperties
             {
                 foreach (SwitchableProperty property in Settings.Properties)
                 {
-                    if (property.Binds != null && property.Binds.Count != 0)
-                        _switchableProperties.Add(new SwitchablePropertyContainer
-                        {
-                            PropertyValue = property.Binds[0].PropertyValue,
-                            Property = property
-                        });
+                    var propertyContainer = new SwitchablePropertyContainer();
+                    var switchableValueBind = property.Binds
+                        .OfType<SwitchableValueBind>()
+                        .FirstOrDefault();
+                    propertyContainer.PropertyValue = switchableValueBind?.PropertyValue;
+                    propertyContainer.Property = property;
+                    _switchableProperties.Add(propertyContainer);
                 }
             }
 
@@ -80,11 +117,26 @@ namespace SwitchableProperties
 
                 foreach (var bind in property.Property.Binds)
                 {
-                    this.AddAction($"{property.Property.PropertyName}_{bind.ActionName}", (a, b) =>
+                    if (bind.GetType() == typeof(SwitchableValueBind))
                     {
-                        property.PropertyValue = bind.PropertyValue;
-                        this.TriggerEvent($"{property.Property.PropertyName}Update");
-                    });
+                        this.AddAction($"{property.Property.PropertyName}_{bind.ActionName}", (a, b) =>
+                        {
+                            property.PropertyValue = ((SwitchableValueBind)bind).PropertyValue;
+                            this.TriggerEvent($"{property.Property.PropertyName}Update");
+                        });
+                    }
+                    else if (bind.GetType() == typeof(SwitchableCyclerBind))
+                    {
+                        this.AddAction($"{property.Property.PropertyName}_{bind.ActionName}", (a, b) =>
+                        {
+                            var direction = ((SwitchableCyclerBind)bind).Direction;
+                            if(direction == "Forward")
+                                property.PropertyValue = property.GetNextBindValue();
+                            else
+                                property.PropertyValue = property.GetPreviousBindValue();
+                            this.TriggerEvent($"{property.Property.PropertyName}Update");
+                        });
+                    }
                 }
             }
         }
@@ -93,7 +145,56 @@ namespace SwitchableProperties
     internal class SwitchablePropertyContainer
     {
         internal string PropertyValue;
+        internal int PropertyIndex;
         internal SwitchableProperty Property;
+
+        internal string GetNextBindValue()
+        {
+            PropertyIndex = GetIndexOfBind();
+
+            PropertyIndex++;
+            if ((PropertyIndex) > Property.Binds
+                    .OfType<SwitchableValueBind>()
+                    .Count() - 1)
+            {
+                PropertyIndex = 0;
+            }
+
+            return GetBindValueAt(PropertyIndex);
+        }
+
+        internal string GetPreviousBindValue()
+        {
+            PropertyIndex = GetIndexOfBind();
+
+            PropertyIndex--;
+            if ((PropertyIndex) < 0)
+            {
+                PropertyIndex = Property.Binds
+                    .OfType<SwitchableValueBind>()
+                    .Count() - 1;
+            }
+
+            return GetBindValueAt(PropertyIndex);
+        }
+
+        private string GetBindValueAt(int index)
+        {
+            return Property.Binds
+                .OfType<SwitchableValueBind>()
+                .ElementAt(index)
+                .PropertyValue;
+        }
+
+        private int GetIndexOfBind()
+        {
+            var activeBind = Property.Binds
+                .OfType<SwitchableValueBind>()
+                .FirstOrDefault(x => x.PropertyValue == PropertyValue);
+
+            return Property.Binds
+                .IndexOf(activeBind);
+        }
     }
 
     public class SwitchableProperty
@@ -101,9 +202,33 @@ namespace SwitchableProperties
         public string PropertyName { get; set; }
         public ObservableCollection<SwitchableBind> Binds { get; set; }
     }
-    public class SwitchableBind
+
+    public abstract class SwitchableBind
     {
-        public string ActionName { get; set; }
+        public abstract string ActionName { get; set; }
+    }
+
+    public class SwitchableValueBind : SwitchableBind
+    {
+        public override string ActionName { get; set; }
         public string PropertyValue { get; set; }
+    }
+
+    public class SwitchableCyclerBind : SwitchableBind
+    {
+        public override string ActionName { get; set; }
+        public string Direction { get; set; }
+    }
+
+    //USED FOR CONVERTING V1 SETTINGS into V1.1+
+    internal class OldSwitchablePropertiesSettings
+    {
+        public ObservableCollection<OldSwitchableProperty> Properties { get; set; }
+    }
+
+    internal class OldSwitchableProperty
+    {
+        public string PropertyName { get; set; }
+        public ObservableCollection<SwitchableValueBind> Binds { get; set; }
     }
 }

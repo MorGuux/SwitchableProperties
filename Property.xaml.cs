@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -28,7 +29,12 @@ namespace SwitchableProperties
 
         private void btnAddBind_Click(object sender, RoutedEventArgs e)
         {
-            ((IList<SwitchableBind>)pnlBinds.ItemsSource).Add(new SwitchableBind());
+            ((IList)pnlBinds.ItemsSource).Add(new SwitchableValueBind());
+        }
+
+        private void btnAddCyclerBind_Click(object sender, RoutedEventArgs e)
+        {
+            ((IList)pnlBinds.ItemsSource).Add(new SwitchableCyclerBind());
         }
 
         private void DeleteBind_OnExecuted(object sender, ExecutedRoutedEventArgs e)

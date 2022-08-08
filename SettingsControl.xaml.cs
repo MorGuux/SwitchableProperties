@@ -1,5 +1,7 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Windows.Input;
 using Newtonsoft.Json;
 using SimHub.Plugins;
@@ -55,14 +57,30 @@ namespace SwitchableProperties
 
             if (ofd.ShowDialog() == true)
             {
-                using (StreamReader sr = new StreamReader(ofd.FileName))
-                using (JsonTextReader reader = new JsonTextReader(sr))
+                try
                 {
-                    JsonSerializer serializer = new JsonSerializer();
-                    var importedSettings = serializer.Deserialize<SwitchablePropertiesSettings>(reader);
+                    var importedSettings = JsonConvert.DeserializeObject<SwitchablePropertiesSettings>(File.ReadAllText(ofd.FileName),
+                        new JsonSerializerSettings
+                        {
+                            TypeNameHandling = TypeNameHandling.Auto,
+                            Formatting = Formatting.Indented,
+                        });
                     Plugin.Settings.Properties.Clear();
                     foreach (var setting in importedSettings.Properties)
                         Plugin.Settings.Properties.Add(setting);
+                }
+                catch (JsonSerializationException)
+                {
+                    var importedSettings = JsonConvert.DeserializeObject<OldSwitchablePropertiesSettings>(File.ReadAllText(ofd.FileName));
+                    Plugin.Settings.Properties.Clear();
+                    foreach (var setting in importedSettings.Properties)
+                    {
+                        Plugin.Settings.Properties.Add(new SwitchableProperty
+                        {
+                            PropertyName = setting.PropertyName,
+                            Binds = new ObservableCollection<SwitchableBind>(setting.Binds)
+                        });
+                    }
                 }
             }
         }
@@ -79,12 +97,11 @@ namespace SwitchableProperties
 
             if (sfd.ShowDialog() == true)
             {
-                using (StreamWriter sr = new StreamWriter(sfd.FileName))
-                using (JsonTextWriter reader = new JsonTextWriter(sr))
-                {
-                    JsonSerializer serializer = new JsonSerializer();
-                    serializer.Serialize(reader, Plugin.Settings);
-                }
+                File.WriteAllText(sfd.FileName,
+                    JsonConvert.SerializeObject(Plugin.Settings, new JsonSerializerSettings
+                    {
+                        TypeNameHandling = TypeNameHandling.Auto
+                    }));
             }
         }
     }

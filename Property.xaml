@@ -23,13 +23,19 @@
             </DataTemplate>
         </styles:SHExpander.HeaderTemplate>
         <StackPanel Orientation="Vertical">
-            <styles:SHButtonSecondary x:Name="btnAddBind" HorizontalAlignment="Left" Click="btnAddBind_Click">New bind</styles:SHButtonSecondary>
+            <StackPanel Orientation="Horizontal">
+                <styles:SHButtonSecondary x:Name="btnAddBind" HorizontalAlignment="Left" Click="btnAddBind_Click">New bind</styles:SHButtonSecondary>
+                <styles:SHButtonSecondary x:Name="btnAddCyclerBind" HorizontalAlignment="Left" Click="btnAddCyclerBind_Click">New cycler bind</styles:SHButtonSecondary>
+            </StackPanel>
             <ItemsControl x:Name="pnlBinds" ItemsSource="{Binding Binds}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
+                <ItemsControl.Resources>
+                    <DataTemplate DataType="{x:Type local:SwitchableValueBind}">
                         <local:Bind DataContext="{Binding}"/>
                     </DataTemplate>
-                </ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type local:SwitchableCyclerBind}">
+                        <local:CyclerBind DataContext="{Binding}"/>
+                    </DataTemplate>
+                </ItemsControl.Resources>
             </ItemsControl>
         </StackPanel>
     </styles:SHExpander>
