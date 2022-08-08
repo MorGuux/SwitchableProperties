@@ -63,6 +63,9 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ToggleBind.xaml.cs">
+      <DependentUpon>ToggleBind.xaml</DependentUpon>
+    </Compile>
     <Compile Include="CyclerBind.xaml.cs">
       <DependentUpon>CyclerBind.xaml</DependentUpon>
     </Compile>
@@ -85,6 +88,10 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="ToggleBind.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="CyclerBind.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

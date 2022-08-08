@@ -37,6 +37,11 @@ namespace SwitchableProperties
             ((IList)pnlBinds.ItemsSource).Add(new SwitchableCyclerBind());
         }
 
+        private void btnAddToggleBind_Click(object sender, RoutedEventArgs e)
+        {
+            ((IList)pnlBinds.ItemsSource).Add(new SwitchableToggleBind());
+        }
+
         private void DeleteBind_OnExecuted(object sender, ExecutedRoutedEventArgs e)
         {
             ((SwitchableProperty)this.DataContext).Binds.Remove(e.Parameter as SwitchableBind);

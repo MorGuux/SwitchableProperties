@@ -137,6 +137,14 @@ namespace SwitchableProperties
                             this.TriggerEvent($"{property.Property.PropertyName}Update");
                         });
                     }
+                    else if (bind.GetType() == typeof(SwitchableToggleBind))
+                    {
+                        this.AddAction($"{property.Property.PropertyName}_{bind.ActionName}", (a, b) =>
+                        {
+                            property.PropertyValue = property.GetToggleValue(((SwitchableToggleBind)bind).PropertyValue);
+                            this.TriggerEvent($"{property.Property.PropertyName}Update");
+                        });
+                    }
                 }
             }
         }
@@ -145,37 +153,38 @@ namespace SwitchableProperties
     internal class SwitchablePropertyContainer
     {
         internal string PropertyValue;
-        internal int PropertyIndex;
+        private string _lastPropertyValue;
+        private int _propertyIndex;
         internal SwitchableProperty Property;
 
         internal string GetNextBindValue()
         {
-            PropertyIndex = GetIndexOfBind();
+            _propertyIndex = GetIndexOfBind();
 
-            PropertyIndex++;
-            if ((PropertyIndex) > Property.Binds
+            _propertyIndex++;
+            if ((_propertyIndex) > Property.Binds
                     .OfType<SwitchableValueBind>()
                     .Count() - 1)
             {
-                PropertyIndex = 0;
+                _propertyIndex = 0;
             }
 
-            return GetBindValueAt(PropertyIndex);
+            return GetBindValueAt(_propertyIndex);
         }
 
         internal string GetPreviousBindValue()
         {
-            PropertyIndex = GetIndexOfBind();
+            _propertyIndex = GetIndexOfBind();
 
-            PropertyIndex--;
-            if ((PropertyIndex) < 0)
+            _propertyIndex--;
+            if ((_propertyIndex) < 0)
             {
-                PropertyIndex = Property.Binds
+                _propertyIndex = Property.Binds
                     .OfType<SwitchableValueBind>()
                     .Count() - 1;
             }
 
-            return GetBindValueAt(PropertyIndex);
+            return GetBindValueAt(_propertyIndex);
         }
 
         private string GetBindValueAt(int index)
@@ -194,6 +203,20 @@ namespace SwitchableProperties
 
             return Property.Binds
                 .IndexOf(activeBind);
+        }
+
+        internal string GetToggleValue(string bindValue)
+        {
+            if (bindValue == PropertyValue)
+            {
+                PropertyValue = _lastPropertyValue;
+            }
+            else
+            {
+                _lastPropertyValue = PropertyValue;
+                PropertyValue = bindValue;
+            }
+            return PropertyValue;
         }
     }
 
@@ -218,6 +241,12 @@ namespace SwitchableProperties
     {
         public override string ActionName { get; set; }
         public string Direction { get; set; }
+    }
+
+    public class SwitchableToggleBind : SwitchableBind
+    {
+        public override string ActionName { get; set; }
+        public string PropertyValue { get; set; }
     }
 
     //USED FOR CONVERTING V1 SETTINGS into V1.1+

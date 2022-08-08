@@ -26,6 +26,7 @@
             <StackPanel Orientation="Horizontal">
                 <styles:SHButtonSecondary x:Name="btnAddBind" HorizontalAlignment="Left" Click="btnAddBind_Click">New bind</styles:SHButtonSecondary>
                 <styles:SHButtonSecondary x:Name="btnAddCyclerBind" HorizontalAlignment="Left" Click="btnAddCyclerBind_Click">New cycler bind</styles:SHButtonSecondary>
+                <styles:SHButtonSecondary x:Name="btnAddToggleBind" HorizontalAlignment="Left" Click="btnAddToggleBind_Click">New toggle bind</styles:SHButtonSecondary>
             </StackPanel>
             <ItemsControl x:Name="pnlBinds" ItemsSource="{Binding Binds}">
                 <ItemsControl.Resources>
@@ -34,6 +35,9 @@
                     </DataTemplate>
                     <DataTemplate DataType="{x:Type local:SwitchableCyclerBind}">
                         <local:CyclerBind DataContext="{Binding}"/>
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type local:SwitchableToggleBind}">
+                        <local:ToggleBind DataContext="{Binding}"/>
                     </DataTemplate>
                 </ItemsControl.Resources>
             </ItemsControl>
