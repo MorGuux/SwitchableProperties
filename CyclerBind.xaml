@@ -32,6 +32,6 @@
                 </MultiBinding>
             </ui:ControlsEditor.ActionName>
         </ui:ControlsEditor>
-        <styles:SHButtonPrimary Grid.Row="0" Grid.Column="5" x:Name="btnDelete" Command="{x:Static local:Property.DeleteBindCommand}" CommandParameter="{Binding DataContext, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:Bind}}}" HorizontalAlignment="Right" VerticalAlignment="Center">Delete</styles:SHButtonPrimary>
+        <styles:SHButtonPrimary Grid.Row="0" Grid.Column="5" x:Name="btnDelete" Command="{x:Static local:Property.DeleteBindCommand}" CommandParameter="{Binding DataContext, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type local:CyclerBind}}}" HorizontalAlignment="Right" VerticalAlignment="Center">Delete</styles:SHButtonPrimary>
     </Grid>
 </UserControl>
