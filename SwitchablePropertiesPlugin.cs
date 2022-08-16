@@ -134,11 +134,7 @@ namespace SwitchableProperties
                         this.AddAction($"{property.Property.PropertyName}_{bind.ActionName}", (a, b) =>
                         {
                             var direction = ((SwitchableCyclerBind)bind).Direction;
-                            SwitchableValueBind nextBind;
-                            if(direction == "Forward")
-                                nextBind = property.GetNextBind();
-                            else
-                                nextBind = property.GetPreviousBind();
+                            var nextBind = direction == "Forward" ? property.GetNextBind() : property.GetPreviousBind();
 
                             property.PropertyValue = nextBind.PropertyValue;
                             property.BindName = nextBind.ActionName;
