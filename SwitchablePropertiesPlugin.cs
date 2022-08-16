@@ -210,6 +210,8 @@ namespace SwitchableProperties
                 .FirstOrDefault(x => x.PropertyValue == PropertyValue);
 
             return Property.Binds
+                .OfType<SwitchableValueBind>()
+                .ToList()
                 .IndexOf(activeBind);
         }
     }
