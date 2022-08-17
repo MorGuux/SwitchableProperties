@@ -87,6 +87,11 @@ namespace SwitchableProperties
             if (Settings.Properties == null)
                 Settings.Properties = new ObservableCollection<SwitchableProperty>();
 
+            GenerateBinds();
+        }
+
+        internal void GenerateBinds()
+        {
             //Initialise properties to their default value (first bind value)
             _switchableProperties = new List<SwitchablePropertyContainer>();
 
@@ -112,7 +117,7 @@ namespace SwitchableProperties
                 this.AttachDelegate($"{property.Property.PropertyName}_ActiveBind", () => property.BindName);
 
 
-                    // Declare an event
+                // Declare an event
                 this.AddEvent($"{property.Property.PropertyName}Update");
 
                 if (property.Property.Binds == null)

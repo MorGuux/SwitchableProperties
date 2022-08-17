@@ -104,5 +104,13 @@ namespace SwitchableProperties
                     }));
             }
         }
+
+        private void btnApply_Click(object sender, System.Windows.RoutedEventArgs e)
+        {
+            Plugin.PluginManager.ClearActions(Plugin.GetType());
+            Plugin.PluginManager.ClearProperties(Plugin.GetType());
+
+            Plugin.GenerateBinds();
+        }
     }
 }

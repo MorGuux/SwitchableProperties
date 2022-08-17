@@ -20,6 +20,7 @@
                 </Grid.RowDefinitions>
                 <styles:SHButtonPrimary Grid.Row="0" x:Name="btnAddProperty" HorizontalAlignment="Left" Click="btnAddProperty_Click">New property</styles:SHButtonPrimary>
                 <StackPanel Orientation="Horizontal" Grid.Row="0" HorizontalAlignment="Right">
+                    <styles:SHButtonPrimary x:Name="btnApply" HorizontalAlignment="Left" Click="btnApply_Click">Apply</styles:SHButtonPrimary>
                     <styles:SHButtonPrimary x:Name="btnImport" HorizontalAlignment="Left" Click="btnImport_Click">Import</styles:SHButtonPrimary>
                     <styles:SHButtonPrimary x:Name="btnExport" HorizontalAlignment="Left" Click="btnExport_Click">Export</styles:SHButtonPrimary>
                 </StackPanel>
