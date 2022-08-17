@@ -29,17 +29,44 @@ namespace SwitchableProperties
 
         private void btnAddBind_Click(object sender, RoutedEventArgs e)
         {
-            ((IList)pnlBinds.ItemsSource).Add(new SwitchableValueBind());
+            var binds = ((IList)pnlBinds.ItemsSource);
+
+            binds.Add(new SwitchableValueBind() { ActionName =  $"{((SwitchableProperty)this.DataContext).PropertyName}_{binds.Count}"});
         }
 
         private void btnAddCyclerBind_Click(object sender, RoutedEventArgs e)
         {
-            ((IList)pnlBinds.ItemsSource).Add(new SwitchableCyclerBind());
+            var binds = ((IList)pnlBinds.ItemsSource);
+
+            if (binds.Count == 0)
+            {
+                //Generating a template
+                binds.Add(new SwitchableValueBind() { ActionName = $"{((SwitchableProperty)this.DataContext).PropertyName}_{binds.Count}" });
+                binds.Add(new SwitchableValueBind() { ActionName = $"{((SwitchableProperty)this.DataContext).PropertyName}_{binds.Count}" });
+                binds.Add(new SwitchableCyclerBind() { ActionName = "Cycler", Direction = "Forward" });
+            }
+            else
+            {
+                binds.Add(new SwitchableCyclerBind() { ActionName = $"{((SwitchableProperty)this.DataContext).PropertyName}_{binds.Count}_Cycler" });
+            }
         }
 
         private void btnAddToggleBind_Click(object sender, RoutedEventArgs e)
         {
-            ((IList)pnlBinds.ItemsSource).Add(new SwitchableToggleBind());
+            var binds = ((IList)pnlBinds.ItemsSource);
+
+            if (binds.Count == 0)
+            {
+                //Generating a template
+                binds.Add(new SwitchableValueBind() { ActionName = "Default" });
+                binds.Add(new SwitchableToggleBind() { ActionName = "Toggle" });
+
+            }
+            else
+            {
+                binds.Add(new SwitchableToggleBind() { ActionName = $"{((SwitchableProperty)this.DataContext).PropertyName}_{binds.Count}_Toggle" });
+            }
+            
         }
 
         private void DeleteBind_OnExecuted(object sender, ExecutedRoutedEventArgs e)
