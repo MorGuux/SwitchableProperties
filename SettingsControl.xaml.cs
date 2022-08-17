@@ -107,6 +107,14 @@ namespace SwitchableProperties
 
         private void btnApply_Click(object sender, System.Windows.RoutedEventArgs e)
         {
+            if (Plugin.CheckForCollisions(false))
+            {
+                //Collisions, so we don't apply the update
+                System.Windows.MessageBox.Show("There are properties with the same name, please rename one!","Name Collision", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                return;
+            }
+                
+
             Plugin.PluginManager.ClearActions(Plugin.GetType());
             Plugin.PluginManager.ClearProperties(Plugin.GetType());
 

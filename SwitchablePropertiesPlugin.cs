@@ -7,6 +7,8 @@ using System.IO;
 using System.Linq;
 using System.Windows.Media;
 using Newtonsoft.Json;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace SwitchableProperties
 {
@@ -32,6 +34,8 @@ namespace SwitchableProperties
 
         public void End(PluginManager pluginManager)
         {
+            CheckForCollisions(true);
+
             // Save settings
             File.WriteAllText(PluginManager.GetCommonStoragePath(this.GetType().Name + ".GeneralSettings.json"), 
                 JsonConvert.SerializeObject(Settings, new JsonSerializerSettings
@@ -158,6 +162,44 @@ namespace SwitchableProperties
                 }
             }
         }
+
+        internal bool CheckForCollisions(bool fixDublicate)
+        {
+            if (Settings.Properties.Count == 0)
+                return false;
+
+            bool existDublicate = false;
+
+            HashSet<string> names = new HashSet<string>();
+
+            foreach (SwitchableProperty property in Settings.Properties)
+            {
+                if (names.Contains(property.PropertyName))
+                {
+                    existDublicate = true;
+
+                    if (fixDublicate)
+                    {
+                        int i;
+                        for (i = 0; names.Contains($"{names.Contains(property.PropertyName)}_{i}") && i < Int32.MaxValue; i++) ;
+
+                        if (i != Int32.MaxValue)
+                            property.PropertyName = $"{property.PropertyName}_{i}";
+                    }
+                    else
+                    {
+                        property.BorderBrush = Brushes.Red;
+                    }
+                }
+                else
+                {
+                    names.Add(property.PropertyName);
+                    property.BorderBrush = Brushes.Black;
+                }
+            }
+
+            return existDublicate;
+        }
     }
 
     internal class SwitchablePropertyContainer
@@ -217,10 +259,40 @@ namespace SwitchableProperties
         }
     }
 
-    public class SwitchableProperty
+    public class SwitchableProperty : INotifyPropertyChanged
     {
-        public string PropertyName { get; set; }
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private string _propertyName;
+
+        public string PropertyName
+        {
+            get => _propertyName;
+            set
+            {
+                _propertyName = value;
+                OnPropertyChanged();
+            }
+        }
+
+        [JsonIgnore]
+        public Brush BorderBrush
+        {
+            get => _borderBrush;
+            set
+            {
+                _borderBrush = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private Brush _borderBrush = Brushes.Black;
         public ObservableCollection<SwitchableBind> Binds { get; set; }
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 
     public abstract class SwitchableBind
