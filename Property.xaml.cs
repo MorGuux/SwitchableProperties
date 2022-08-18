@@ -32,7 +32,9 @@ namespace SwitchableProperties
             var binds = ((IList)pnlBinds.ItemsSource);
             var property = ((SwitchableProperty)this.DataContext);
 
-            binds.Add(new SwitchableValueBind() { ActionName =  $"{((SwitchableProperty)this.DataContext).PropertyName}_{binds.Count}", Plugin = property.Plugin, Property = property });
+            binds.Add(new SwitchableValueBind() { ActionName =  $"{property.PropertyName}_{binds.Count}", Plugin = property.Plugin, Property = property });
+
+            property.Plugin.GenerateBinds();
         }
 
         private void btnAddCyclerBind_Click(object sender, RoutedEventArgs e)
@@ -43,14 +45,16 @@ namespace SwitchableProperties
             if (binds.Count == 0)
             {
                 //Generating a template
-                binds.Add(new SwitchableValueBind() { ActionName = $"{((SwitchableProperty)this.DataContext).PropertyName}_{binds.Count}", Plugin = property.Plugin, Property = property });
-                binds.Add(new SwitchableValueBind() { ActionName = $"{((SwitchableProperty)this.DataContext).PropertyName}_{binds.Count}", Plugin = property.Plugin, Property = property });
+                binds.Add(new SwitchableValueBind() { ActionName = $"{property.PropertyName}_{binds.Count}", Plugin = property.Plugin, Property = property });
+                binds.Add(new SwitchableValueBind() { ActionName = $"{property.PropertyName}_{binds.Count}", Plugin = property.Plugin, Property = property });
                 binds.Add(new SwitchableCyclerBind() { ActionName = "Cycler", Direction = "Forward", Plugin = property.Plugin, Property = property });
             }
             else
             {
                 binds.Add(new SwitchableCyclerBind() { ActionName = $"{((SwitchableProperty)this.DataContext).PropertyName}_{binds.Count}_Cycler", Plugin = property.Plugin, Property = property });
             }
+
+            property.Plugin.GenerateBinds();
         }
 
         private void btnAddToggleBind_Click(object sender, RoutedEventArgs e)
@@ -69,7 +73,8 @@ namespace SwitchableProperties
             {
                 binds.Add(new SwitchableToggleBind() { ActionName = $"{property.PropertyName}_{binds.Count}_Toggle", Plugin = property.Plugin, Property = property });
             }
-            
+
+            property.Plugin.GenerateBinds();
         }
 
         private void DeleteBind_OnExecuted(object sender, ExecutedRoutedEventArgs e)

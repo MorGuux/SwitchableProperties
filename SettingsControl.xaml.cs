@@ -35,14 +35,18 @@ namespace SwitchableProperties
         {
             Plugin.Settings.Properties.Add(new SwitchableProperty
             {
+                PropertyName = "",
                 Binds = new ObservableCollection<SwitchableBind>(),
                 Plugin = this.Plugin
             });
+
+            Plugin.GenerateBinds();
         }
 
         private void DeleteProperty_OnExecuted(object sender, ExecutedRoutedEventArgs e)
         {
             Plugin.Settings.Properties.Remove(e.Parameter as SwitchableProperty);
+            Plugin.GenerateBinds();
         }
 
         private void btnImport_Click(object sender, System.Windows.RoutedEventArgs e)
@@ -102,6 +106,8 @@ namespace SwitchableProperties
                         Plugin.Settings.Properties.Add(newSetting);
                     }
                 }
+
+                Plugin.GenerateBinds();
             }
         }
 
