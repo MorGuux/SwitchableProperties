@@ -35,7 +35,8 @@ namespace SwitchableProperties
         {
             Plugin.Settings.Properties.Add(new SwitchableProperty
             {
-                Binds = new ObservableCollection<SwitchableBind>()
+                Binds = new ObservableCollection<SwitchableBind>(),
+                Plugin = this.Plugin
             });
         }
 

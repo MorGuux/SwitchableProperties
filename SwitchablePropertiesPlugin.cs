@@ -103,6 +103,8 @@ namespace SwitchableProperties
             {
                 foreach (SwitchableProperty property in Settings.Properties)
                 {
+                    property.Plugin = this;
+
                     var propertyContainer = new SwitchablePropertyContainer();
                     var switchableValueBind = property.Binds
                         .OfType<SwitchableValueBind>()
@@ -129,6 +131,9 @@ namespace SwitchableProperties
 
                 foreach (var bind in property.Property.Binds)
                 {
+                    bind.Plugin = this;
+                    bind.Property = property.Property;
+
                     if (bind.GetType() == typeof(SwitchableValueBind))
                     {
                         this.AddAction($"{property.Property.PropertyName}_{bind.ActionName}", (a, b) =>
@@ -265,6 +270,8 @@ namespace SwitchableProperties
 
         private string _propertyName;
 
+        private string _nameTextBoxValue; //used by the text box to allow modifying, while still knowing from what you modify
+
         public string PropertyName
         {
             get => _propertyName;
@@ -272,8 +279,174 @@ namespace SwitchableProperties
             {
                 _propertyName = value;
                 OnPropertyChanged();
+
+                _nameTextBoxValue = value;
+                OnPropertyChanged("NameTextBoxValue");
             }
         }
+
+        [JsonIgnore]
+        public string NameTextBoxValue
+        {
+            get => _nameTextBoxValue;
+            set
+            {
+                if (_nameTextBoxValue == value)
+                    return;
+
+                value = value.Trim();
+
+                _nameTextBoxValue = value;
+                OnPropertyChanged();
+
+                if (Plugin != null)
+                {
+                    bool collides = false;
+
+                    if (PropertyName != value)
+                    {
+                        foreach (var item in Plugin.Settings.Properties)
+                        {
+                            if (item.PropertyName.ToLower().Equals(value.ToLower()))
+                            {
+                                collides = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (collides)
+                    {
+                        BorderBrush = Brushes.Red;
+                    }
+                    else
+                    {
+                        BorderBrush = Brushes.LightGray;
+
+                        //TODO Migrate InputBindings
+
+                        PropertyName = value;
+
+                        Plugin.GenerateBinds();
+                    }
+                }
+                else
+                {
+                    PropertyName = value;
+                }
+            }
+        }
+
+
+
+        private Brush _borderBrush = Brushes.LightGray;
+
+        [JsonIgnore]
+        public Brush BorderBrush
+        {
+            get => _borderBrush;
+            set
+            {
+                _borderBrush = value;
+                OnPropertyChanged();
+            }
+        }
+        
+        [JsonIgnore]
+        internal SwitchablePropertiesPlugin Plugin { get; set; }
+        
+        public ObservableCollection<SwitchableBind> Binds { get; set; }
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
+
+    public abstract class SwitchableBind : INotifyPropertyChanged
+    {
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private string _actionName;
+
+        private string _nameTextBoxValue; //used 
+
+        public string ActionName
+        {
+            get => _actionName;
+            set
+            {
+                _actionName = value;
+                OnPropertyChanged();
+
+                _nameTextBoxValue = value;
+                OnPropertyChanged("NameTextBoxValue");
+            }
+        }
+
+        [JsonIgnore]
+        public string NameTextBoxValue
+        {
+            get => _nameTextBoxValue;
+            set
+            {
+                if (_nameTextBoxValue == value)
+                    return;
+
+                value = value.Trim();
+
+                _nameTextBoxValue = value;
+                OnPropertyChanged();
+
+                if (Plugin != null && Property != null)
+                {
+                    bool collides = false;
+
+                    if (ActionName != value)
+                    {
+                        string fullActionName = ($"{Property.PropertyName}_{value}").ToLower();
+
+                        foreach (var item in Plugin.Settings.Properties)
+                        {
+                            foreach (var bindings in item.Binds)
+                            {
+                                string cacheName = ($"{item.PropertyName}_{bindings.ActionName}").ToLower();
+
+                                if (cacheName.Equals(fullActionName))
+                                {
+                                    collides = true;
+                                    break;
+                                }
+                            }
+
+                            if (collides)
+                                break;
+                        }
+                    }
+
+                    if (collides)
+                    {
+                        BorderBrush = Brushes.Red;
+                    }
+                    else
+                    {
+                        BorderBrush = Brushes.LightGray;
+
+                        //TODO Migrate InputBindings
+
+                        ActionName = value;
+
+                        Plugin.GenerateBinds();
+                    }
+                }
+                else
+                {
+                    ActionName = value;
+                }
+            }
+        }
+
+        private Brush _borderBrush = Brushes.LightGray;
 
         [JsonIgnore]
         public Brush BorderBrush
@@ -286,8 +459,11 @@ namespace SwitchableProperties
             }
         }
 
-        private Brush _borderBrush = Brushes.Black;
-        public ObservableCollection<SwitchableBind> Binds { get; set; }
+        [JsonIgnore]
+        internal SwitchablePropertiesPlugin Plugin { get; set; }
+
+        [JsonIgnore]
+        internal SwitchableProperty Property { get; set; }
 
         protected void OnPropertyChanged([CallerMemberName] string propertyName = "")
         {
@@ -295,26 +471,18 @@ namespace SwitchableProperties
         }
     }
 
-    public abstract class SwitchableBind
-    {
-        public abstract string ActionName { get; set; }
-    }
-
     public class SwitchableValueBind : SwitchableBind
     {
-        public override string ActionName { get; set; }
         public string PropertyValue { get; set; }
     }
 
     public class SwitchableCyclerBind : SwitchableBind
     {
-        public override string ActionName { get; set; }
         public string Direction { get; set; }
     }
 
     public class SwitchableToggleBind : SwitchableBind
     {
-        public override string ActionName { get; set; }
         public string PropertyValue { get; set; }
         private string _lastPropertyValue;
         private string _lastBind;
