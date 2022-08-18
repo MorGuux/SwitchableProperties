@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Windows.Forms;
 using System.Windows.Input;
 using Newtonsoft.Json;
 using SimHub.Plugins;
@@ -35,53 +36,91 @@ namespace SwitchableProperties
         {
             Plugin.Settings.Properties.Add(new SwitchableProperty
             {
-                Binds = new ObservableCollection<SwitchableBind>()
+                PropertyName = "",
+                Binds = new ObservableCollection<SwitchableBind>(),
+                Plugin = this.Plugin
             });
+
+            Plugin.GenerateBinds();
         }
 
         private void DeleteProperty_OnExecuted(object sender, ExecutedRoutedEventArgs e)
         {
-            Plugin.Settings.Properties.Remove(e.Parameter as SwitchableProperty);
+            var prop = e.Parameter as SwitchableProperty;
+
+            Plugin.Settings.Properties.Remove(prop);
+
+            foreach (var item in prop.Binds)
+            {
+                Plugin.DeleteInputMapTargets($"{prop.PropertyName}_{item.ActionName}");
+            }
+
+            Plugin.GenerateBinds();
         }
 
         private void btnImport_Click(object sender, System.Windows.RoutedEventArgs e)
         {
-            OpenFileDialog ofd = new OpenFileDialog
+            if (Plugin.Settings.Properties.Count > 0)
             {
-                Title = "Browse for settings",
-                DefaultExt = ".json",
-                Filter = "JSON files (*.json)|*.json",
-                CheckFileExists = true,
-                CheckPathExists = true
-            };
+                SHDialog dialog = new SHDialog();
+                SHDialogContentBase dialogContent = new SHDialogContentBase
+                {
+                    Dialog = dialog,
+                    Content = "Import DELETES all your existing Properties and Binds, and replaces them with the ones imported.\n\nDo you want to continue?",
+                    ShowOk = true,
+                    ShowCancel = true
+                };
 
-            if (ofd.ShowDialog() == true)
-            {
-                try
+                dialogContent.ShowDialog(this, () =>
                 {
-                    var importedSettings = JsonConvert.DeserializeObject<SwitchablePropertiesSettings>(File.ReadAllText(ofd.FileName),
-                        new JsonSerializerSettings
-                        {
-                            TypeNameHandling = TypeNameHandling.Auto,
-                            Formatting = Formatting.Indented,
-                        });
-                    Plugin.Settings.Properties.Clear();
-                    foreach (var setting in importedSettings.Properties)
-                        Plugin.Settings.Properties.Add(setting);
-                }
-                catch (JsonSerializationException)
-                {
-                    var importedSettings = JsonConvert.DeserializeObject<OldSwitchablePropertiesSettings>(File.ReadAllText(ofd.FileName));
-                    Plugin.Settings.Properties.Clear();
-                    foreach (var setting in importedSettings.Properties)
+                    if (dialogContent.DialogResult != DialogResult.OK) 
+                        return;
+
+                    OpenFileDialog ofd = new OpenFileDialog
                     {
-                        Plugin.Settings.Properties.Add(new SwitchableProperty
+                        Title = "Browse for settings",
+                        DefaultExt = ".json",
+                        Filter = "JSON files (*.json)|*.json",
+                        CheckFileExists = true,
+                        CheckPathExists = true
+                    };
+
+                    if (ofd.ShowDialog() == true)
+                    {
+                        try
                         {
-                            PropertyName = setting.PropertyName,
-                            Binds = new ObservableCollection<SwitchableBind>(setting.Binds)
-                        });
+                            var importedSettings = JsonConvert.DeserializeObject<SwitchablePropertiesSettings>(File.ReadAllText(ofd.FileName),
+                                new JsonSerializerSettings
+                                {
+                                    TypeNameHandling = TypeNameHandling.Auto,
+                                    Formatting = Formatting.Indented,
+                                });
+                            Plugin.Settings.Properties.Clear();
+                            foreach (var setting in importedSettings.Properties)
+                            {
+                                Plugin.Settings.Properties.Add(setting);
+                            }
+
+                        }
+                        catch (JsonSerializationException)
+                        {
+                            var importedSettings = JsonConvert.DeserializeObject<OldSwitchablePropertiesSettings>(File.ReadAllText(ofd.FileName));
+                            Plugin.Settings.Properties.Clear();
+                            foreach (var setting in importedSettings.Properties)
+                            {
+                                var newSetting = new SwitchableProperty
+                                {
+                                    PropertyName = setting.PropertyName,
+                                    Binds = new ObservableCollection<SwitchableBind>(setting.Binds)
+                                };
+
+                                Plugin.Settings.Properties.Add(newSetting);
+                            }
+                        }
+
+                        Plugin.GenerateBinds();
                     }
-                }
+                });
             }
         }
 
@@ -100,7 +139,8 @@ namespace SwitchableProperties
                 File.WriteAllText(sfd.FileName,
                     JsonConvert.SerializeObject(Plugin.Settings, new JsonSerializerSettings
                     {
-                        TypeNameHandling = TypeNameHandling.Auto
+                        TypeNameHandling = TypeNameHandling.Auto,
+                        Formatting = Formatting.Indented
                     }));
             }
         }

@@ -29,22 +29,64 @@ namespace SwitchableProperties
 
         private void btnAddBind_Click(object sender, RoutedEventArgs e)
         {
-            ((IList)pnlBinds.ItemsSource).Add(new SwitchableValueBind());
+            var binds = ((IList)pnlBinds.ItemsSource);
+            var property = ((SwitchableProperty)this.DataContext);
+
+            binds.Add(new SwitchableValueBind() { ActionName =  $"{property.PropertyName}_{binds.Count}", Plugin = property.Plugin, Property = property });
+
+            property.Plugin.GenerateBinds();
         }
 
         private void btnAddCyclerBind_Click(object sender, RoutedEventArgs e)
         {
-            ((IList)pnlBinds.ItemsSource).Add(new SwitchableCyclerBind());
+            var binds = ((IList)pnlBinds.ItemsSource);
+            var property = ((SwitchableProperty)this.DataContext);
+
+            if (binds.Count == 0)
+            {
+                //Generating a template
+                binds.Add(new SwitchableValueBind() { ActionName = $"{property.PropertyName}_{binds.Count}", Plugin = property.Plugin, Property = property });
+                binds.Add(new SwitchableValueBind() { ActionName = $"{property.PropertyName}_{binds.Count}", Plugin = property.Plugin, Property = property });
+                binds.Add(new SwitchableCyclerBind() { ActionName = "Cycler", Direction = "Forward", Plugin = property.Plugin, Property = property });
+            }
+            else
+            {
+                binds.Add(new SwitchableCyclerBind() { ActionName = $"{((SwitchableProperty)this.DataContext).PropertyName}_{binds.Count}_Cycler", Plugin = property.Plugin, Property = property });
+            }
+
+            property.Plugin.GenerateBinds();
         }
 
         private void btnAddToggleBind_Click(object sender, RoutedEventArgs e)
         {
-            ((IList)pnlBinds.ItemsSource).Add(new SwitchableToggleBind());
+            var binds = ((IList)pnlBinds.ItemsSource);
+            var property = ((SwitchableProperty)this.DataContext);
+
+            if (binds.Count == 0)
+            {
+                //Generating a template
+                binds.Add(new SwitchableValueBind() { ActionName = "Default", Plugin = property.Plugin, Property = property });
+                binds.Add(new SwitchableToggleBind() { ActionName = "Toggle", Plugin = property.Plugin, Property = property });
+
+            }
+            else
+            {
+                binds.Add(new SwitchableToggleBind() { ActionName = $"{property.PropertyName}_{binds.Count}_Toggle", Plugin = property.Plugin, Property = property });
+            }
+
+            property.Plugin.GenerateBinds();
         }
 
         private void DeleteBind_OnExecuted(object sender, ExecutedRoutedEventArgs e)
         {
-            ((SwitchableProperty)this.DataContext).Binds.Remove(e.Parameter as SwitchableBind);
+            var property = ((SwitchableProperty)this.DataContext);
+            var bind = e.Parameter as SwitchableBind;
+
+            property.Binds.Remove(bind);
+
+            property.Plugin.DeleteInputMapTargets($"{property.PropertyName}_{bind.ActionName}");
+            
+            property.Plugin.GenerateBinds();
         }
     }
 }

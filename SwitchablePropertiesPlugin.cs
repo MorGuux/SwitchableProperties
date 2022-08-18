@@ -7,6 +7,8 @@ using System.IO;
 using System.Linq;
 using System.Windows.Media;
 using Newtonsoft.Json;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 
 namespace SwitchableProperties
 {
@@ -87,6 +89,14 @@ namespace SwitchableProperties
             if (Settings.Properties == null)
                 Settings.Properties = new ObservableCollection<SwitchableProperty>();
 
+            GenerateBinds();
+        }
+
+        internal void GenerateBinds()
+        {
+            PluginManager.ClearActions(this.GetType());
+            PluginManager.ClearProperties(this.GetType());
+
             //Initialise properties to their default value (first bind value)
             _switchableProperties = new List<SwitchablePropertyContainer>();
 
@@ -94,6 +104,8 @@ namespace SwitchableProperties
             {
                 foreach (SwitchableProperty property in Settings.Properties)
                 {
+                    property.Plugin = this;
+
                     var propertyContainer = new SwitchablePropertyContainer();
                     var switchableValueBind = property.Binds
                         .OfType<SwitchableValueBind>()
@@ -111,8 +123,7 @@ namespace SwitchableProperties
                 this.AttachDelegate($"{property.Property.PropertyName}", () => property.PropertyValue);
                 this.AttachDelegate($"{property.Property.PropertyName}_ActiveBind", () => property.BindName);
 
-
-                    // Declare an event
+                // Declare an event
                 this.AddEvent($"{property.Property.PropertyName}Update");
 
                 if (property.Property.Binds == null)
@@ -120,6 +131,9 @@ namespace SwitchableProperties
 
                 foreach (var bind in property.Property.Binds)
                 {
+                    bind.Plugin = this;
+                    bind.Property = property.Property;
+
                     if (bind.GetType() == typeof(SwitchableValueBind))
                     {
                         this.AddAction($"{property.Property.PropertyName}_{bind.ActionName}", (a, b) =>
@@ -151,6 +165,33 @@ namespace SwitchableProperties
                         });
                     }
                 }
+            }
+        }
+
+        internal void RenameInputMapTargets(string oldName, string newName)
+        {
+            var controlEditor = new SimHub.Plugins.UI.ControlsEditor() { Visibility = System.Windows.Visibility.Collapsed, ActionName = $"SwitchablePropertiesPlugin.{oldName}" };
+
+            var inputList = controlEditor.Model.Triggers;
+
+            foreach (var item in inputList)
+            {
+                item.Target = $"SwitchablePropertiesPlugin.{newName}";
+            }
+        }
+
+        internal void DeleteInputMapTargets(string oldName)
+        {
+            var test = new SimHub.Plugins.UI.ControlsEditor() { Visibility = System.Windows.Visibility.Collapsed, ActionName = $"SwitchablePropertiesPlugin.{oldName}" };
+
+            var inputList = test.Model.Triggers;
+
+            foreach (var item in inputList)
+            {
+                /*Setting the Trigger and Target empty allows them to be bound again without prompting the user
+                And SimHub will clean up the empty bind on the next reload*/
+                item.Target = "";
+                item.Trigger = "";
             }
         }
     }
@@ -212,32 +253,228 @@ namespace SwitchableProperties
         }
     }
 
-    public class SwitchableProperty
+    public class SwitchableProperty : INotifyPropertyChanged
     {
-        public string PropertyName { get; set; }
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private string _propertyName;
+
+        private string _nameTextBoxValue; //used by the text box to allow modifying, while still knowing from what you modify
+
+        public string PropertyName
+        {
+            get => _propertyName;
+            set
+            {
+                _propertyName = value;
+                OnPropertyChanged();
+
+                _nameTextBoxValue = value;
+                OnPropertyChanged("NameTextBoxValue");
+            }
+        }
+
+        [JsonIgnore]
+        public string NameTextBoxValue
+        {
+            get => _nameTextBoxValue;
+            set
+            {
+                if (_nameTextBoxValue == value)
+                    return;
+
+                value = value.Trim();
+
+                _nameTextBoxValue = value;
+                OnPropertyChanged();
+
+                if (Plugin != null)
+                {
+                    bool collides = false;
+
+                    if (PropertyName != value)
+                    {
+                        if (Plugin.Settings.Properties.Any(item => item.PropertyName.ToLower().Equals(value.ToLower())))
+                        {
+                            collides = true;
+                        }
+                    }
+
+                    if (collides)
+                    {
+                        BorderBrush = Brushes.Red;
+                    }
+                    else
+                    {
+                        BorderBrush = Brushes.LightGray;
+
+                        if (PropertyName != value)
+                        {
+                            foreach (var item in Binds)
+                            {
+                                Plugin.RenameInputMapTargets($"{PropertyName}_{item.ActionName}", $"{value}_{item.ActionName}");
+                            }
+                        }
+
+                        PropertyName = value;
+
+                        Plugin.GenerateBinds();
+                    }
+                }
+                else
+                {
+                    PropertyName = value;
+                }
+            }
+        }
+
+
+
+        private Brush _borderBrush = Brushes.LightGray;
+
+        [JsonIgnore]
+        public Brush BorderBrush
+        {
+            get => _borderBrush;
+            set
+            {
+                _borderBrush = value;
+                OnPropertyChanged();
+            }
+        }
+        
+        [JsonIgnore]
+        internal SwitchablePropertiesPlugin Plugin { get; set; }
+        
         public ObservableCollection<SwitchableBind> Binds { get; set; }
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 
-    public abstract class SwitchableBind
+    public abstract class SwitchableBind : INotifyPropertyChanged
     {
-        public abstract string ActionName { get; set; }
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private string _actionName;
+
+        private string _nameTextBoxValue; //used 
+
+        public string ActionName
+        {
+            get => _actionName;
+            set
+            {
+                _actionName = value;
+                OnPropertyChanged();
+
+                _nameTextBoxValue = value;
+                OnPropertyChanged("NameTextBoxValue");
+            }
+        }
+
+        [JsonIgnore]
+        public string NameTextBoxValue
+        {
+            get => _nameTextBoxValue;
+            set
+            {
+                if (_nameTextBoxValue == value)
+                    return;
+
+                value = value.Trim();
+
+                _nameTextBoxValue = value;
+                OnPropertyChanged();
+
+                if (Plugin != null && Property != null)
+                {
+                    bool collides = false;
+
+                    if (ActionName != value)
+                    {
+                        string fullActionName = ($"{Property.PropertyName}_{value}").ToLower();
+
+                        foreach (var item in Plugin.Settings.Properties)
+                        {
+                            foreach (var bindings in item.Binds)
+                            {
+                                string cacheName = ($"{item.PropertyName}_{bindings.ActionName}").ToLower();
+
+                                if (cacheName.Equals(fullActionName))
+                                {
+                                    collides = true;
+                                    break;
+                                }
+                            }
+
+                            if (collides)
+                                break;
+                        }
+                    }
+
+                    if (collides)
+                    {
+                        BorderBrush = Brushes.Red;
+                    }
+                    else
+                    {
+                        BorderBrush = Brushes.LightGray;
+
+                        if (ActionName != value)
+                            Plugin.RenameInputMapTargets($"{Property.PropertyName}_{this.ActionName}", $"{Property.PropertyName}_{value}");
+
+                        ActionName = value;
+
+                        Plugin.GenerateBinds();
+                    }
+                }
+                else
+                {
+                    ActionName = value;
+                }
+            }
+        }
+
+        private Brush _borderBrush = Brushes.LightGray;
+
+        [JsonIgnore]
+        public Brush BorderBrush
+        {
+            get => _borderBrush;
+            set
+            {
+                _borderBrush = value;
+                OnPropertyChanged();
+            }
+        }
+
+        [JsonIgnore]
+        internal SwitchablePropertiesPlugin Plugin { get; set; }
+
+        [JsonIgnore]
+        internal SwitchableProperty Property { get; set; }
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 
     public class SwitchableValueBind : SwitchableBind
     {
-        public override string ActionName { get; set; }
         public string PropertyValue { get; set; }
     }
 
     public class SwitchableCyclerBind : SwitchableBind
     {
-        public override string ActionName { get; set; }
         public string Direction { get; set; }
     }
 
     public class SwitchableToggleBind : SwitchableBind
     {
-        public override string ActionName { get; set; }
         public string PropertyValue { get; set; }
         private string _lastPropertyValue;
         private string _lastBind;

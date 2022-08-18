@@ -19,7 +19,7 @@
         </Grid.ColumnDefinitions>
         <Label Grid.Row="0" Grid.Column="0" Content="Bind Name" HorizontalAlignment="Left" VerticalAlignment="Center"/>
         <Label Grid.Row="0" Grid.Column="2" Content="Direction" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-        <TextBox x:Name="txtBindName" Grid.Row="0" Grid.Column="1" TextWrapping="NoWrap" Text="{Binding ActionName}" Margin="5,2,20,2" VerticalContentAlignment="Center"/>
+        <TextBox x:Name="txtBindName" Grid.Row="0" Grid.Column="1" TextWrapping="NoWrap" Text="{Binding NameTextBoxValue}" BorderBrush="{Binding BorderBrush}" Margin="5,2,20,2" VerticalContentAlignment="Center"/>
         <ComboBox x:Name="txtBindValue" Grid.Row="0" Grid.Column="3" Text="{Binding Direction}" Margin="5,2,6,2" VerticalContentAlignment="Center" IsReadOnly="True">
             <ComboBoxItem Content="Forward"/>
             <ComboBoxItem Content="Backward"/>
