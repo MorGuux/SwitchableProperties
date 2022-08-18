@@ -45,7 +45,15 @@ namespace SwitchableProperties
 
         private void DeleteProperty_OnExecuted(object sender, ExecutedRoutedEventArgs e)
         {
-            Plugin.Settings.Properties.Remove(e.Parameter as SwitchableProperty);
+            var prop = e.Parameter as SwitchableProperty;
+
+            Plugin.Settings.Properties.Remove(prop);
+
+            foreach (var item in prop.Binds)
+            {
+                Plugin.DeleteInputMapTargets($"{prop.PropertyName}_{item.ActionName}");
+            }
+
             Plugin.GenerateBinds();
         }
 
@@ -74,13 +82,6 @@ namespace SwitchableProperties
                     foreach (var setting in importedSettings.Properties)
                     {
                         Plugin.Settings.Properties.Add(setting);
-                        setting.Plugin = this.Plugin;
-
-                        foreach (var binds in setting.Binds)
-                        {
-                            binds.Plugin = this.Plugin;
-                            binds.Property = setting;
-                        }
                     }
                         
                 }
@@ -95,13 +96,6 @@ namespace SwitchableProperties
                             PropertyName = setting.PropertyName,
                             Binds = new ObservableCollection<SwitchableBind>(setting.Binds)
                         };
-
-                        newSetting.Plugin = this.Plugin;
-                        foreach (var binds in newSetting.Binds)
-                        {
-                            binds.Plugin = this.Plugin;
-                            binds.Property = newSetting;
-                        }
 
                         Plugin.Settings.Properties.Add(newSetting);
                     }

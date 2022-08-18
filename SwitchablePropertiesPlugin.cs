@@ -181,6 +181,22 @@ namespace SwitchableProperties
                 item.Target = $"SwitchablePropertiesPlugin.{newName}";
             }
         }
+
+        internal void DeleteInputMapTargets(string oldName)
+        {
+            var test = new SimHub.Plugins.UI.ControlsEditor() { Visibility = System.Windows.Visibility.Collapsed, ActionName = $"SwitchablePropertiesPlugin.{oldName}" };
+
+            var inputList = test.Model.Triggers;
+
+            foreach (var item in inputList)
+            {
+                //And this is kind of even more stupid
+                //Setting the Trigger and Target empty allows them to be bound again without promting the user
+                //And SimHub will clean up the empty bind on the next reload
+                item.Target = "";
+                item.Trigger = "";
+            }
+        }
     }
 
     internal class SwitchablePropertyContainer

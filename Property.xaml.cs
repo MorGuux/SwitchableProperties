@@ -79,7 +79,14 @@ namespace SwitchableProperties
 
         private void DeleteBind_OnExecuted(object sender, ExecutedRoutedEventArgs e)
         {
-            ((SwitchableProperty)this.DataContext).Binds.Remove(e.Parameter as SwitchableBind);
+            var property = ((SwitchableProperty)this.DataContext);
+            var bind = e.Parameter as SwitchableBind;
+
+            property.Binds.Remove(bind);
+
+            property.Plugin.DeleteInputMapTargets($"{property.PropertyName}_{bind.ActionName}");
+            
+            property.Plugin.GenerateBinds();
         }
     }
 }
