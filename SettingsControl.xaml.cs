@@ -126,7 +126,8 @@ namespace SwitchableProperties
                 File.WriteAllText(sfd.FileName,
                     JsonConvert.SerializeObject(Plugin.Settings, new JsonSerializerSettings
                     {
-                        TypeNameHandling = TypeNameHandling.Auto
+                        TypeNameHandling = TypeNameHandling.Auto,
+                        Formatting = Formatting.Indented
                     }));
             }
         }
