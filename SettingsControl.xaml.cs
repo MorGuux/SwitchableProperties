@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Windows.Forms;
 using System.Windows.Input;
 using Newtonsoft.Json;
 using SimHub.Plugins;
@@ -61,53 +62,65 @@ namespace SwitchableProperties
         {
             if (Plugin.Settings.Properties.Count > 0)
             {
-                if (System.Windows.MessageBox.Show("Import DELETES all your existing Properties and Binds, to replace them with the once Imported.\n\nDo you want to continue?", "Import Overrride Warning!", System.Windows.MessageBoxButton.OKCancel, System.Windows.MessageBoxImage.Warning) == System.Windows.MessageBoxResult.Cancel)
-                    return;
-            }
-
-            OpenFileDialog ofd = new OpenFileDialog
-            {
-                Title = "Browse for settings",
-                DefaultExt = ".json",
-                Filter = "JSON files (*.json)|*.json",
-                CheckFileExists = true,
-                CheckPathExists = true
-            };
-
-            if (ofd.ShowDialog() == true)
-            {
-                try
+                SHDialog dialog = new SHDialog();
+                SHDialogContentBase dialogContent = new SHDialogContentBase
                 {
-                    var importedSettings = JsonConvert.DeserializeObject<SwitchablePropertiesSettings>(File.ReadAllText(ofd.FileName),
-                        new JsonSerializerSettings
-                        {
-                            TypeNameHandling = TypeNameHandling.Auto,
-                            Formatting = Formatting.Indented,
-                        });
-                    Plugin.Settings.Properties.Clear();
-                    foreach (var setting in importedSettings.Properties)
-                    {
-                        Plugin.Settings.Properties.Add(setting);
-                    }
-                        
-                }
-                catch (JsonSerializationException)
+                    Dialog = dialog,
+                    Content = "Import DELETES all your existing Properties and Binds, and replaces them with the ones imported.\n\nDo you want to continue?",
+                    ShowOk = true,
+                    ShowCancel = true
+                };
+
+                dialogContent.ShowDialog(this, () =>
                 {
-                    var importedSettings = JsonConvert.DeserializeObject<OldSwitchablePropertiesSettings>(File.ReadAllText(ofd.FileName));
-                    Plugin.Settings.Properties.Clear();
-                    foreach (var setting in importedSettings.Properties)
+                    if (dialogContent.DialogResult != DialogResult.OK) 
+                        return;
+
+                    OpenFileDialog ofd = new OpenFileDialog
                     {
-                        var newSetting = new SwitchableProperty
+                        Title = "Browse for settings",
+                        DefaultExt = ".json",
+                        Filter = "JSON files (*.json)|*.json",
+                        CheckFileExists = true,
+                        CheckPathExists = true
+                    };
+
+                    if (ofd.ShowDialog() == true)
+                    {
+                        try
                         {
-                            PropertyName = setting.PropertyName,
-                            Binds = new ObservableCollection<SwitchableBind>(setting.Binds)
-                        };
+                            var importedSettings = JsonConvert.DeserializeObject<SwitchablePropertiesSettings>(File.ReadAllText(ofd.FileName),
+                                new JsonSerializerSettings
+                                {
+                                    TypeNameHandling = TypeNameHandling.Auto,
+                                    Formatting = Formatting.Indented,
+                                });
+                            Plugin.Settings.Properties.Clear();
+                            foreach (var setting in importedSettings.Properties)
+                            {
+                                Plugin.Settings.Properties.Add(setting);
+                            }
 
-                        Plugin.Settings.Properties.Add(newSetting);
+                        }
+                        catch (JsonSerializationException)
+                        {
+                            var importedSettings = JsonConvert.DeserializeObject<OldSwitchablePropertiesSettings>(File.ReadAllText(ofd.FileName));
+                            Plugin.Settings.Properties.Clear();
+                            foreach (var setting in importedSettings.Properties)
+                            {
+                                var newSetting = new SwitchableProperty
+                                {
+                                    PropertyName = setting.PropertyName,
+                                    Binds = new ObservableCollection<SwitchableBind>(setting.Binds)
+                                };
+
+                                Plugin.Settings.Properties.Add(newSetting);
+                            }
+                        }
+
+                        Plugin.GenerateBinds();
                     }
-                }
-
-                Plugin.GenerateBinds();
+                });
             }
         }
 
