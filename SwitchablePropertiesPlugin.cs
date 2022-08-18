@@ -62,23 +62,7 @@ namespace SwitchableProperties
                         Formatting = Formatting.Indented,
                     });
             }
-            catch (JsonSerializationException)
-            {
-                var oldSettings = JsonConvert.DeserializeObject<OldSwitchablePropertiesSettings>(
-                        File.ReadAllText(
-                            PluginManager.GetCommonStoragePath(this.GetType().Name + ".GeneralSettings.json")));
-                Settings = new SwitchablePropertiesSettings();
-                Settings.Properties = new ObservableCollection<SwitchableProperty>();
-                foreach (var setting in oldSettings.Properties)
-                {
-                    Settings.Properties.Add(new SwitchableProperty
-                    {
-                        PropertyName = setting.PropertyName,
-                        Binds = new ObservableCollection<SwitchableBind>(setting.Binds)
-                    });
-                }
-            }
-            catch (FileNotFoundException)
+            catch (Exception)
             {
                 Settings = new SwitchablePropertiesSettings
                 {
@@ -328,8 +312,6 @@ namespace SwitchableProperties
             }
         }
 
-
-
         private Brush _borderBrush = Brushes.LightGray;
 
         [JsonIgnore]
@@ -506,17 +488,5 @@ namespace SwitchableProperties
                 return ActionName;
             }
         }
-    }
-
-    //USED FOR CONVERTING V1 SETTINGS into V1.1+
-    internal class OldSwitchablePropertiesSettings
-    {
-        public ObservableCollection<OldSwitchableProperty> Properties { get; set; }
-    }
-
-    internal class OldSwitchableProperty
-    {
-        public string PropertyName { get; set; }
-        public ObservableCollection<SwitchableValueBind> Binds { get; set; }
     }
 }

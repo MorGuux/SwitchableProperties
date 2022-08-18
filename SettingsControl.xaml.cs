@@ -76,51 +76,55 @@ namespace SwitchableProperties
                     if (dialogContent.DialogResult != DialogResult.OK) 
                         return;
 
-                    OpenFileDialog ofd = new OpenFileDialog
-                    {
-                        Title = "Browse for settings",
-                        DefaultExt = ".json",
-                        Filter = "JSON files (*.json)|*.json",
-                        CheckFileExists = true,
-                        CheckPathExists = true
-                    };
-
-                    if (ofd.ShowDialog() == true)
-                    {
-                        try
-                        {
-                            var importedSettings = JsonConvert.DeserializeObject<SwitchablePropertiesSettings>(File.ReadAllText(ofd.FileName),
-                                new JsonSerializerSettings
-                                {
-                                    TypeNameHandling = TypeNameHandling.Auto,
-                                    Formatting = Formatting.Indented,
-                                });
-                            Plugin.Settings.Properties.Clear();
-                            foreach (var setting in importedSettings.Properties)
-                            {
-                                Plugin.Settings.Properties.Add(setting);
-                            }
-
-                        }
-                        catch (JsonSerializationException)
-                        {
-                            var importedSettings = JsonConvert.DeserializeObject<OldSwitchablePropertiesSettings>(File.ReadAllText(ofd.FileName));
-                            Plugin.Settings.Properties.Clear();
-                            foreach (var setting in importedSettings.Properties)
-                            {
-                                var newSetting = new SwitchableProperty
-                                {
-                                    PropertyName = setting.PropertyName,
-                                    Binds = new ObservableCollection<SwitchableBind>(setting.Binds)
-                                };
-
-                                Plugin.Settings.Properties.Add(newSetting);
-                            }
-                        }
-
-                        Plugin.GenerateBinds();
-                    }
+                    ImportSettings();
                 });
+            }
+            else
+            {
+                ImportSettings();
+            }
+        }
+
+        private void ImportSettings()
+        {
+            OpenFileDialog ofd = new OpenFileDialog
+            {
+                Title = "Browse for settings",
+                DefaultExt = ".json",
+                Filter = "JSON files (*.json)|*.json",
+                CheckFileExists = true,
+                CheckPathExists = true
+            };
+
+            if (ofd.ShowDialog() == true)
+            {
+                try
+                {
+                    var importedSettings = JsonConvert.DeserializeObject<SwitchablePropertiesSettings>(File.ReadAllText(ofd.FileName),
+                        new JsonSerializerSettings
+                        {
+                            TypeNameHandling = TypeNameHandling.Auto,
+                            Formatting = Formatting.Indented,
+                        });
+                    Plugin.Settings.Properties.Clear();
+                    foreach (var setting in importedSettings.Properties)
+                    {
+                        Plugin.Settings.Properties.Add(setting);
+                    }
+
+                    Plugin.GenerateBinds();
+                }
+                catch (Exception)
+                {
+                    SHDialog errorDialog = new SHDialog();
+                    SHDialogContentBase errorDialogContent = new SHDialogContentBase
+                    {
+                        Dialog = errorDialog,
+                        Content = "Invalid settings file, please make sure the imported file is compatible with this plugin.",
+                        ShowOk = true
+                    };
+                    errorDialogContent.ShowDialog(this);
+                }
             }
         }
 
