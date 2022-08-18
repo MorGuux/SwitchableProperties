@@ -68,7 +68,17 @@ namespace SwitchableProperties
                         });
                     Plugin.Settings.Properties.Clear();
                     foreach (var setting in importedSettings.Properties)
+                    {
                         Plugin.Settings.Properties.Add(setting);
+                        setting.Plugin = this.Plugin;
+
+                        foreach (var binds in setting.Binds)
+                        {
+                            binds.Plugin = this.Plugin;
+                            binds.Property = setting;
+                        }
+                    }
+                        
                 }
                 catch (JsonSerializationException)
                 {
@@ -76,11 +86,20 @@ namespace SwitchableProperties
                     Plugin.Settings.Properties.Clear();
                     foreach (var setting in importedSettings.Properties)
                     {
-                        Plugin.Settings.Properties.Add(new SwitchableProperty
+                        var newSetting = new SwitchableProperty
                         {
                             PropertyName = setting.PropertyName,
                             Binds = new ObservableCollection<SwitchableBind>(setting.Binds)
-                        });
+                        };
+
+                        newSetting.Plugin = this.Plugin;
+                        foreach (var binds in newSetting.Binds)
+                        {
+                            binds.Plugin = this.Plugin;
+                            binds.Property = newSetting;
+                        }
+
+                        Plugin.Settings.Properties.Add(newSetting);
                     }
                 }
             }
