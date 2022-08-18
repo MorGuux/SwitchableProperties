@@ -34,8 +34,6 @@ namespace SwitchableProperties
 
         public void End(PluginManager pluginManager)
         {
-            CheckForCollisions(true);
-
             // Save settings
             File.WriteAllText(PluginManager.GetCommonStoragePath(this.GetType().Name + ".GeneralSettings.json"), 
                 JsonConvert.SerializeObject(Settings, new JsonSerializerSettings
@@ -96,6 +94,9 @@ namespace SwitchableProperties
 
         internal void GenerateBinds()
         {
+            PluginManager.ClearActions(this.GetType());
+            PluginManager.ClearProperties(this.GetType());
+
             //Initialise properties to their default value (first bind value)
             _switchableProperties = new List<SwitchablePropertyContainer>();
 
@@ -168,42 +169,17 @@ namespace SwitchableProperties
             }
         }
 
-        internal bool CheckForCollisions(bool fixDublicate)
+        internal void RenameInputMapTargets(string oldName, string newName)
         {
-            if (Settings.Properties.Count == 0)
-                return false;
+            //Yes, this is stupid, but it works to gain access to the input maps
+            var test = new SimHub.Plugins.UI.ControlsEditor() { Visibility = System.Windows.Visibility.Collapsed, ActionName = $"SwitchablePropertiesPlugin.{oldName}" };
 
-            bool existDublicate = false;
+            var inputList = test.Model.Triggers;
 
-            HashSet<string> names = new HashSet<string>();
-
-            foreach (SwitchableProperty property in Settings.Properties)
+            foreach (var item in inputList)
             {
-                if (names.Contains(property.PropertyName))
-                {
-                    existDublicate = true;
-
-                    if (fixDublicate)
-                    {
-                        int i;
-                        for (i = 0; names.Contains($"{names.Contains(property.PropertyName)}_{i}") && i < Int32.MaxValue; i++) ;
-
-                        if (i != Int32.MaxValue)
-                            property.PropertyName = $"{property.PropertyName}_{i}";
-                    }
-                    else
-                    {
-                        property.BorderBrush = Brushes.Red;
-                    }
-                }
-                else
-                {
-                    names.Add(property.PropertyName);
-                    property.BorderBrush = Brushes.Black;
-                }
+                item.Target = $"SwitchablePropertiesPlugin.{newName}";
             }
-
-            return existDublicate;
         }
     }
 
@@ -323,7 +299,14 @@ namespace SwitchableProperties
                     {
                         BorderBrush = Brushes.LightGray;
 
-                        //TODO Migrate InputBindings
+                        if (PropertyName != value)
+                        {
+                            foreach (var item in Binds)
+                            {
+                                Plugin.RenameInputMapTargets($"{PropertyName}_{item.ActionName}", $"{value}_{item.ActionName}");
+                            }
+                        }
+
 
                         PropertyName = value;
 
@@ -432,7 +415,8 @@ namespace SwitchableProperties
                     {
                         BorderBrush = Brushes.LightGray;
 
-                        //TODO Migrate InputBindings
+                        if (ActionName != value)
+                            Plugin.RenameInputMapTargets($"{Property.PropertyName}_{this.ActionName}", $"{Property.PropertyName}_{value}");
 
                         ActionName = value;
 
