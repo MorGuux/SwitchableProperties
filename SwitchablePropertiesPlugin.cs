@@ -123,7 +123,6 @@ namespace SwitchableProperties
                 this.AttachDelegate($"{property.Property.PropertyName}", () => property.PropertyValue);
                 this.AttachDelegate($"{property.Property.PropertyName}_ActiveBind", () => property.BindName);
 
-
                 // Declare an event
                 this.AddEvent($"{property.Property.PropertyName}Update");
 
@@ -171,10 +170,9 @@ namespace SwitchableProperties
 
         internal void RenameInputMapTargets(string oldName, string newName)
         {
-            //Yes, this is stupid, but it works to gain access to the input maps
-            var test = new SimHub.Plugins.UI.ControlsEditor() { Visibility = System.Windows.Visibility.Collapsed, ActionName = $"SwitchablePropertiesPlugin.{oldName}" };
+            var controlEditor = new SimHub.Plugins.UI.ControlsEditor() { Visibility = System.Windows.Visibility.Collapsed, ActionName = $"SwitchablePropertiesPlugin.{oldName}" };
 
-            var inputList = test.Model.Triggers;
+            var inputList = controlEditor.Model.Triggers;
 
             foreach (var item in inputList)
             {
@@ -190,9 +188,8 @@ namespace SwitchableProperties
 
             foreach (var item in inputList)
             {
-                //And this is kind of even more stupid
-                //Setting the Trigger and Target empty allows them to be bound again without promting the user
-                //And SimHub will clean up the empty bind on the next reload
+                /*Setting the Trigger and Target empty allows them to be bound again without prompting the user
+                And SimHub will clean up the empty bind on the next reload*/
                 item.Target = "";
                 item.Trigger = "";
             }
@@ -297,13 +294,9 @@ namespace SwitchableProperties
 
                     if (PropertyName != value)
                     {
-                        foreach (var item in Plugin.Settings.Properties)
+                        if (Plugin.Settings.Properties.Any(item => item.PropertyName.ToLower().Equals(value.ToLower())))
                         {
-                            if (item.PropertyName.ToLower().Equals(value.ToLower()))
-                            {
-                                collides = true;
-                                break;
-                            }
+                            collides = true;
                         }
                     }
 
@@ -322,7 +315,6 @@ namespace SwitchableProperties
                                 Plugin.RenameInputMapTargets($"{PropertyName}_{item.ActionName}", $"{value}_{item.ActionName}");
                             }
                         }
-
 
                         PropertyName = value;
 
