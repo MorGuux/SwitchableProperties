@@ -59,6 +59,12 @@ namespace SwitchableProperties
 
         private void btnImport_Click(object sender, System.Windows.RoutedEventArgs e)
         {
+            if (Plugin.Settings.Properties.Count > 0)
+            {
+                if (System.Windows.MessageBox.Show("Import DELETES all your existing Properties and Binds, to replace them with the once Imported.\n\nDo you want to continue?", "Import Overrride Warning!", System.Windows.MessageBoxButton.OKCancel, System.Windows.MessageBoxImage.Warning) == System.Windows.MessageBoxResult.Cancel)
+                    return;
+            }
+
             OpenFileDialog ofd = new OpenFileDialog
             {
                 Title = "Browse for settings",

@@ -24,9 +24,9 @@
         </styles:SHExpander.HeaderTemplate>
         <StackPanel Orientation="Vertical">
             <StackPanel Orientation="Horizontal">
-                <styles:SHButtonSecondary x:Name="btnAddBind" HorizontalAlignment="Left" Click="btnAddBind_Click">New bind</styles:SHButtonSecondary>
-                <styles:SHButtonSecondary x:Name="btnAddCyclerBind" HorizontalAlignment="Left" Click="btnAddCyclerBind_Click">New cycler bind</styles:SHButtonSecondary>
-                <styles:SHButtonSecondary x:Name="btnAddToggleBind" HorizontalAlignment="Left" Click="btnAddToggleBind_Click">New toggle bind</styles:SHButtonSecondary>
+                <styles:SHButtonSecondary x:Name="btnAddBind" HorizontalAlignment="Left" Click="btnAddBind_Click" ToolTip="A normal Bind. You can either assign a Button, or just use a Cycler/Toggle to activate this, or both">New Bind</styles:SHButtonSecondary>
+                <styles:SHButtonSecondary x:Name="btnAddCyclerBind" HorizontalAlignment="Left" Click="btnAddCyclerBind_Click" ToolTip="Cycles either Forwards or Backwards through all normal binds">New Cycler Bind</styles:SHButtonSecondary>
+                <styles:SHButtonSecondary x:Name="btnAddToggleBind" HorizontalAlignment="Left" Click="btnAddToggleBind_Click" ToolTip="Press the assigned Button to activate, a further press will return the value to the previously active Bind">New Toggle Bind</styles:SHButtonSecondary>
             </StackPanel>
             <ItemsControl x:Name="pnlBinds" ItemsSource="{Binding Binds}">
                 <ItemsControl.Resources>
