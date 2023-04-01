@@ -6,6 +6,7 @@
              xmlns:local="clr-namespace:SwitchableProperties"
              xmlns:ui="clr-namespace:SimHub.Plugins.UI;assembly=SimHub.Plugins"
              xmlns:styles="clr-namespace:SimHub.Plugins.Styles;assembly=SimHub.Plugins"
+             xmlns:dashstudio="clr-namespace:SimHub.Plugins.OutputPlugins.Dash.WPFUI;assembly=SimHub.Plugins"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              mc:Ignorable="d" 
              d:DesignHeight="60" d:DesignWidth="400">
@@ -23,11 +24,22 @@
             </DataTemplate>
         </styles:SHExpander.HeaderTemplate>
         <StackPanel Orientation="Vertical">
-            <StackPanel Orientation="Horizontal">
-                <styles:SHButtonSecondary x:Name="btnAddBind" HorizontalAlignment="Left" Click="btnAddBind_Click" ToolTip="A normal Bind. You can either assign a Button, or just use a Cycler/Toggle to activate this, or both">New Bind</styles:SHButtonSecondary>
-                <styles:SHButtonSecondary x:Name="btnAddCyclerBind" HorizontalAlignment="Left" Click="btnAddCyclerBind_Click" ToolTip="Cycles either Forwards or Backwards through all normal binds">New Cycler Bind</styles:SHButtonSecondary>
-                <styles:SHButtonSecondary x:Name="btnAddToggleBind" HorizontalAlignment="Left" Click="btnAddToggleBind_Click" ToolTip="Press the assigned Button to activate, a further press will return the value to the previously active Bind">New Toggle Bind</styles:SHButtonSecondary>
-            </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Left">
+                    <styles:SHButtonSecondary x:Name="btnAddBind" HorizontalAlignment="Left" Click="btnAddBind_Click" ToolTip="A normal Bind. You can either assign a Button, or just use a Cycler/Toggle to activate this, or both" Content="New Bind" VerticalAlignment="Center"/>
+                    <styles:SHButtonSecondary x:Name="btnAddCyclerBind" HorizontalAlignment="Left" Click="btnAddCyclerBind_Click" ToolTip="Cycles either Forwards or Backwards through all normal binds" Content="New Cycler Bind" VerticalAlignment="Center"/>
+                    <styles:SHButtonSecondary x:Name="btnAddToggleBind" HorizontalAlignment="Left" Click="btnAddToggleBind_Click" ToolTip="Press the assigned Button to activate, a further press will return the value to the previously active Bind" Content="New Toggle Bind" VerticalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,5,0">
+                    <Label HorizontalAlignment="Left" VerticalAlignment="Center" Margin="0,0,5,0" Content="Value Lock"/>
+                    <CheckBox IsChecked="{Binding CanBeDisabled}" ToolTip="Allow value modification only when attached SimHub property is true." HorizontalAlignment="Left" Margin="0,0,5,0" Click="chkboxEnableProperty_Click" VerticalAlignment="Center"/>
+                    <dashstudio:FormulaPicker Expression="{Binding EnabledProperty}" IsEnabled="{Binding CanBeDisabled}" HorizontalAlignment="Left" VerticalAlignment="Center"></dashstudio:FormulaPicker>
+                </StackPanel>
+            </Grid>
             <ItemsControl x:Name="pnlBinds" ItemsSource="{Binding Binds}">
                 <ItemsControl.Resources>
                     <DataTemplate DataType="{x:Type local:SwitchableValueBind}">

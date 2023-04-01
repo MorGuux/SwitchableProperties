@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using SimHub.Plugins.OutputPlugins.Dash.GLCDTemplating;
 
 namespace SwitchableProperties
 {
@@ -87,6 +88,19 @@ namespace SwitchableProperties
             property.Plugin.DeleteInputMapTargets($"{property.PropertyName}_{bind.ActionName}");
             
             property.Plugin.GenerateBinds();
+        }
+
+        private void chkboxEnableProperty_Click(object sender, RoutedEventArgs e)
+        {
+            var property = ((SwitchableProperty)this.DataContext);
+            bool canBeDisabled = property.CanBeDisabled;
+            property.CanBeDisabled = canBeDisabled;
+
+            //Add empty expression if not exists
+            if (property.EnabledProperty == null)
+            {
+                property.EnabledProperty = new ExpressionValue();
+            }
         }
     }
 }

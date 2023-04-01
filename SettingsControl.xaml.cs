@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using System.Windows.Input;
 using Newtonsoft.Json;
 using SimHub.Plugins;
+using SimHub.Plugins.OutputPlugins.Dash.GLCDTemplating;
 using SimHub.Plugins.UI;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
@@ -38,7 +39,9 @@ namespace SwitchableProperties
             {
                 PropertyName = "",
                 Binds = new ObservableCollection<SwitchableBind>(),
-                Plugin = this.Plugin
+                Plugin = this.Plugin,
+                EnabledProperty = new ExpressionValue(),
+                CanBeDisabled = false
             });
 
             Plugin.GenerateBinds();

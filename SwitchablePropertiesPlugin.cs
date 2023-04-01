@@ -9,6 +9,8 @@ using System.Windows.Media;
 using Newtonsoft.Json;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using SimHub.Plugins.OutputPlugins.Dash.GLCDTemplating;
+using SimHub.Plugins.OutputPlugins.Dash.TemplatingCommon;
 
 namespace SwitchableProperties
 {
@@ -122,6 +124,8 @@ namespace SwitchableProperties
                     {
                         this.AddAction($"{property.Property.PropertyName}_{bind.ActionName}", (a, b) =>
                         {
+                            if (property.IsPropertyDisabled()) return;
+
                             property.PropertyValue = ((SwitchableValueBind)bind).PropertyValue;
                             property.BindName = ((SwitchableValueBind)bind).ActionName;
                             this.TriggerEvent($"{property.Property.PropertyName}Update");
@@ -131,6 +135,8 @@ namespace SwitchableProperties
                     {
                         this.AddAction($"{property.Property.PropertyName}_{bind.ActionName}", (a, b) =>
                         {
+                            if (property.IsPropertyDisabled()) return;
+
                             var direction = ((SwitchableCyclerBind)bind).Direction;
                             var nextBind = direction == "Forward" ? property.GetNextBind() : property.GetPreviousBind();
 
@@ -143,6 +149,8 @@ namespace SwitchableProperties
                     {
                         this.AddAction($"{property.Property.PropertyName}_{bind.ActionName}", (a, b) =>
                         {
+                            if (property.IsPropertyDisabled()) return;
+
                             property.PropertyValue = ((SwitchableToggleBind)(bind)).GetToggleValue(property.PropertyValue);
                             property.BindName = ((SwitchableToggleBind)bind).GetToggleName(property.BindName);
                             this.TriggerEvent($"{property.Property.PropertyName}Update");
@@ -186,6 +194,7 @@ namespace SwitchableProperties
         internal string BindName;
         private int _propertyIndex;
         internal SwitchableProperty Property;
+        private NCalcEngineBase _engine = new NCalcEngineBase();
 
         internal SwitchableValueBind GetNextBind()
         {
@@ -235,6 +244,21 @@ namespace SwitchableProperties
                 .ToList()
                 .IndexOf(activeBind);
         }
+
+        /// <summary>
+        /// Is the property actively disabled (based on the EnabledProperty expression)
+        /// </summary>
+        /// <returns>True if the property is disabled and cannot be modified</returns>
+        public bool IsPropertyDisabled()
+        {
+            if (!Property.CanBeDisabled)
+                return false;
+
+            var result = _engine.ParseValue(Property.EnabledProperty);
+            if (result is bool b) return !b;
+
+            return false;
+        }
     }
 
     public class SwitchableProperty : INotifyPropertyChanged
@@ -244,6 +268,30 @@ namespace SwitchableProperties
         private string _propertyName;
 
         private string _nameTextBoxValue; //used by the text box to allow modifying, while still knowing from what you modify
+
+        private bool _canBeDisabled;
+
+        public bool CanBeDisabled
+        {
+            get => _canBeDisabled;
+            set
+            {
+                _canBeDisabled = value;
+                OnPropertyChanged();
+            }
+        }
+
+        private ExpressionValue _enabledProperty;
+
+        public ExpressionValue EnabledProperty
+        {
+            get => _enabledProperty;
+            set
+            {
+                _enabledProperty = value;
+                OnPropertyChanged();
+            }
+        }
 
         public string PropertyName
         {
